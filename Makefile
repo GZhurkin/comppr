@@ -1,92 +1,123 @@
+# Компилятор и флаги
+CXX = g++
+CXXFLAGS = -g -Wall
+AR = ar
+ARFLAGS = crs
+
+# Папки
+TASKONE_SRC = taskone
+TASKTWO_SRC = tasktwo
+TASKTHREE_SRC = taskthree
+BUILD_DIR = build
+
+# Цели по умолчанию
 all: taskone tasktwo taskthree
 
-taskone: lmain main1.i main1.s main1 mainr2 mainr3 optim1.s optim2.s optim3.s first.h second.h main2 main3
+# Создаем папку для сборки, если она не существует
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Часть 1
-# Поэтапная компиляция
-main1.i: main1.cpp
-	g++ -E -o main1.i main1.cpp
-main1.s: main1.cpp
-	g++ -S -o main1.s main1.cpp
-main1.o: main1.cpp
-	g++ -c -o main1.o main1.cpp
-main1: main1.o
-	g++ main1.o -o main1.exe
+# Задача 1 (taskone)
+taskone: $(BUILD_DIR)/taskone/main1.exe $(BUILD_DIR)/taskone/mainr2.exe $(BUILD_DIR)/taskone/mainr3.exe
 
-# Оптимизация
-optim1.s: main1.cpp
-	g++ -S -O1 -o optim1.s main1.cpp
-optim2.s: main1.cpp
-	g++ -S -O2 -o optim2.s main1.cpp
-optim3.s: main1.cpp
-	g++ -S -O3 -o optim3.s main1.cpp
+# Поэтапная компиляция (часть 1)
+$(BUILD_DIR)/taskone/main1.o: $(TASKONE_SRC)/main1.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKONE_SRC)/main1.cpp
 
-# Часть 2
-# Раздельная компиляция
-main2.o: main1.cpp
-	g++ -c -o main2.o main2.cpp
-main3.o: main3.cpp
-	g++ -c -o main3.o main3.cpp
-first.o: first.cpp
-	g++ -c -o first.o first.cpp
-second.o: second.cpp
-	g++ -c -o second.o second.cpp
-mainr2: main2.o first.o second.o
-	g++ -o mainr2.exe main2.o first.o second.o
-mainr3: main3.o first.o second.o
-	g++ -o mainr3.exe main2.o first.o second.o
+$(BUILD_DIR)/taskone/main1.exe: $(BUILD_DIR)/taskone/main1.o | $(BUILD_DIR)
+	$(CXX) -o $@ $(BUILD_DIR)/taskone/main1.o
 
-# Часть 3
-# Создание статической библиотеки
-libmain.a: first.o second.o
-	ar crs main.a first.o second.o
-main2: main2.o libmain.a
-	g++ -o main2 main2.o -L. -lmain
-main3: main3.o libmain.a
-	g++ -o main3 main3.o -L. -lmain
+# Оптимизация (часть 1)
+$(BUILD_DIR)/taskone/optim1.s: $(TASKONE_SRC)/main1.cpp | $(BUILD_DIR)
+	$(CXX) -S -O1 -o $@ $(TASKONE_SRC)/main1.cpp
 
-tasktwo: main1 main2 main3
+$(BUILD_DIR)/taskone/optim2.s: $(TASKONE_SRC)/main1.cpp | $(BUILD_DIR)
+	$(CXX) -S -O2 -o $@ $(TASKONE_SRC)/main1.cpp
 
-# Часть 1
-main1: main1.cpp
-	g++ -g main1.cpp -o main1.exe
-# Часть 2
-main2: main2.cpp
-	g++ -g main2.cpp -o main2.exe
-# Часть 3
-strings.o: strings.cpp
-	g++ -g -c strings.cpp
-msin3.o: main3.cpp
-	g++ -g -c main3.cpp
-libstring.a: strings.o
-	ar crs libstring.a strings.o
-main3: main3.o libstring.a
-	g++ -g -o main3 main.o -L. -libstring
+$(BUILD_DIR)/taskone/optim3.s: $(TASKONE_SRC)/main1.cpp | $(BUILD_DIR)
+	$(CXX) -S -O3 -o $@ $(TASKONE_SRC)/main1.cpp
 
-taskthree: main
+# Раздельная компиляция (часть 2)
+$(BUILD_DIR)/taskone/main2.o: $(TASKONE_SRC)/main2.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKONE_SRC)/main2.cpp
 
-main.o: main.cpp
-	g++ -c -o main.o main.cpp
-arrayLib.o: arrayLib.cpp arrayLib.h
-	g++ -c -o arrayLib.o arrayLib.cpp
-matrixLib.o: matrixLib.cpp matrixLib.h
-	g++ -c -o matrixLib.o matrixLib.cpp
-loadLib.o: loadLib.cpp loadLib.h
-	g++ -c -o loadLib.o loadLib.cpp
-arrayLib.dll: arrayLib.o
-	g++ -o arrayLib.dll arrayLib.o
-matrixLib.dll: matrixLib.o
-	g++ -o matrixLib.dll matrixLib.o
-loadLib.dll: loadLib.o
-	g++ -o loadLib.dll loadLib.o
-main.exe: main.o loadLib.dll
-	g++ -o main.exe main.o -L./ -lloadLib
+$(BUILD_DIR)/taskone/main3.o: $(TASKONE_SRC)/main3.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKONE_SRC)/main3.cpp
 
-# Отчистка
+$(BUILD_DIR)/taskone/first.o: $(TASKONE_SRC)/first.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKONE_SRC)/first.cpp
+
+$(BUILD_DIR)/taskone/second.o: $(TASKONE_SRC)/second.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKONE_SRC)/second.cpp
+
+$(BUILD_DIR)/taskone/mainr2.exe: $(BUILD_DIR)/taskone/main2.o $(BUILD_DIR)/taskone/first.o $(BUILD_DIR)/taskone/second.o | $(BUILD_DIR)
+	$(CXX) -o $@ $^
+
+$(BUILD_DIR)/taskone/mainr3.exe: $(BUILD_DIR)/taskone/main3.o $(BUILD_DIR)/taskone/first.o $(BUILD_DIR)/taskone/second.o | $(BUILD_DIR)
+	$(CXX) -o $@ $^
+
+# Создание статической библиотеки (часть 3)
+$(BUILD_DIR)/taskone/libmain.a: $(BUILD_DIR)/taskone/first.o $(BUILD_DIR)/taskone/second.o | $(BUILD_DIR)
+	$(AR) $(ARFLAGS) $@ $^
+
+$(BUILD_DIR)/taskone/main2: $(BUILD_DIR)/taskone/main2.o $(BUILD_DIR)/taskone/libmain.a | $(BUILD_DIR)
+	$(CXX) -o $@ $(BUILD_DIR)/taskone/main2.o -L$(BUILD_DIR)/taskone -lmain
+
+$(BUILD_DIR)/taskone/main3: $(BUILD_DIR)/taskone/main3.o $(BUILD_DIR)/taskone/libmain.a | $(BUILD_DIR)
+	$(CXX) -o $@ $(BUILD_DIR)/taskone/main3.o -L$(BUILD_DIR)/taskone -lmain
+
+
+# Задача 2 (tasktwo)
+tasktwo: $(BUILD_DIR)/tasktwo/main1.exe $(BUILD_DIR)/tasktwo/main2.exe $(BUILD_DIR)/tasktwo/main3.exe
+
+$(BUILD_DIR)/tasktwo/main1.exe: $(TASKTWO_SRC)/main1.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $(TASKTWO_SRC)/main1.cpp
+
+$(BUILD_DIR)/tasktwo/main2.exe: $(TASKTWO_SRC)/main2.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $(TASKTWO_SRC)/main2.cpp
+
+$(BUILD_DIR)/tasktwo/strings.o: $(TASKTWO_SRC)/strings.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(TASKTWO_SRC)/strings.cpp
+
+$(BUILD_DIR)/tasktwo/main3.o: $(TASKTWO_SRC)/main3.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(TASKTWO_SRC)/main3.cpp
+
+$(BUILD_DIR)/tasktwo/libstring.a: $(BUILD_DIR)/tasktwo/strings.o | $(BUILD_DIR)
+	$(AR) $(ARFLAGS) $@ $^
+
+$(BUILD_DIR)/tasktwo/main3.exe: $(BUILD_DIR)/tasktwo/main3.o $(BUILD_DIR)/tasktwo/libstring.a | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+
+# Задача 3 (taskthree)
+taskthree: $(BUILD_DIR)/taskthree/main.exe
+
+$(BUILD_DIR)/taskthree/main.o: $(TASKTHREE_SRC)/main.cpp | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKTHREE_SRC)/main.cpp
+
+$(BUILD_DIR)/taskthree/arrayLib.o: $(TASKTHREE_SRC)/arrayLib.cpp $(TASKTHREE_SRC)/arrayLib.h | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKTHREE_SRC)/arrayLib.cpp
+
+$(BUILD_DIR)/taskthree/matrixLib.o: $(TASKTHREE_SRC)/matrixLib.cpp $(TASKTHREE_SRC)/matrixLib.h | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKTHREE_SRC)/matrixLib.cpp
+
+$(BUILD_DIR)/taskthree/loadLib.o: $(TASKTHREE_SRC)/loadLib.cpp $(TASKTHREE_SRC)/loadLib.h | $(BUILD_DIR)
+	$(CXX) -c -o $@ $(CXXFLAGS) $(TASKTHREE_SRC)/loadLib.cpp
+
+# Создание динамических библиотек
+$(BUILD_DIR)/taskthree/arrayLib.dll: $(BUILD_DIR)/taskthree/arrayLib.o | $(BUILD_DIR)
+	$(CXX) -shared -o $@ $(BUILD_DIR)/taskthree/arrayLib.o
+
+$(BUILD_DIR)/taskthree/matrixLib.dll: $(BUILD_DIR)/taskthree/matrixLib.o | $(BUILD_DIR)
+	$(CXX) -shared -o $@ $(BUILD_DIR)/taskthree/matrixLib.o
+
+$(BUILD_DIR)/taskthree/loadLib.dll: $(BUILD_DIR)/taskthree/loadLib.o | $(BUILD_DIR)
+	$(CXX) -shared -o $@ $(BUILD_DIR)/taskthree/loadLib.o
+
+$(BUILD_DIR)/taskthree/main.exe: $(BUILD_DIR)/taskthree/main.o $(BUILD_DIR)/taskthree/loadLib.dll | $(BUILD_DIR)
+	$(CXX) -o $@ $(BUILD_DIR)/taskthree/main.o -L$(BUILD_DIR)/taskthree -lloadLib
+
+# Очистка
 .PHONY: clean
 clean:
-	del *.o
-	del *.s
-	del *.l
-	del *.a
-	del *.exe
+	rm -rf $(BUILD_DIR)
